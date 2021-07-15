@@ -42,7 +42,7 @@ static void filter_loop( void * );
 /**
  * Allocates work object and launches work thread with work_func.
  * @param jobs Handle to hb_list_t.
- * @param die Handle to user inititated exit indicator.
+ * @param die Handle to user initiated exit indicator.
  * @param error Handle to error indicator.
  */
 hb_thread_t * hb_work_init( hb_list_t * jobs, volatile int * die, hb_error_code * error, hb_job_t ** job )
@@ -818,103 +818,6 @@ void correct_framerate( hb_interjob_t * interjob, hb_job_t * job )
     }
 }
 
-static int bit_depth_is_supported(hb_job_t * job, int bit_depth)
-{
-    for (int i = 0; i < hb_list_count(job->list_filter); i++)
-    {
-        hb_filter_object_t *filter = hb_list_item(job->list_filter, i);
-
-        switch (filter->id) {
-            case HB_FILTER_DETELECINE:
-            case HB_FILTER_COMB_DETECT:
-            case HB_FILTER_DECOMB:
-            case HB_FILTER_DENOISE:
-            case HB_FILTER_NLMEANS:
-            case HB_FILTER_CHROMA_SMOOTH:
-            case HB_FILTER_LAPSHARP:
-            case HB_FILTER_UNSHARP:
-            case HB_FILTER_GRAYSCALE:
-                return 0;
-        }
-    }
-
-    if (hb_video_encoder_get_depth(job->vcodec) < bit_depth)
-    {
-        return 0;
-    }
-
-    return 1;
-}
-
-static int pix_fmt_is_supported(hb_job_t * job, int pix_fmt)
-{
-    for (int i = 0; i < hb_list_count(job->list_filter); i++)
-    {
-        hb_filter_object_t *filter = hb_list_item(job->list_filter, i);
-
-        switch (filter->id)
-        {
-            case HB_FILTER_DETELECINE:
-            case HB_FILTER_COMB_DETECT:
-            case HB_FILTER_DECOMB:
-            case HB_FILTER_DENOISE:
-            case HB_FILTER_NLMEANS:
-            case HB_FILTER_CHROMA_SMOOTH:
-            case HB_FILTER_LAPSHARP:
-            case HB_FILTER_UNSHARP:
-            case HB_FILTER_GRAYSCALE:
-                if (pix_fmt != AV_PIX_FMT_YUV420P)
-                {
-                    return 0;
-                }
-        }
-    }
-
-    return 1;
-}
-
-static int get_best_pix_ftm(hb_job_t * job)
-{
-    int bit_depth = hb_get_bit_depth(job->title->pix_fmt);
-#if HB_PROJECT_FEATURE_QSV && (defined( _WIN32 ) || defined( __MINGW32__ ))
-    if (hb_qsv_encoder_info_get(hb_qsv_get_adapter_index(), job->vcodec))
-    {
-        if (hb_qsv_full_path_is_enabled(job))
-        {
-            if (job->title->pix_fmt == AV_PIX_FMT_YUV420P10 && job->vcodec == HB_VCODEC_QSV_H265_10BIT)
-            {
-                return AV_PIX_FMT_P010LE;
-            }
-            else
-            {
-                return AV_PIX_FMT_NV12;
-            }
-        }
-        else
-        {
-            // system memory usage: QSV encoder only or QSV decoder + SW filters + QSV encoder
-            return AV_PIX_FMT_YUV420P;
-        }
-    }
-#endif
-    if (job->vcodec == HB_VCODEC_FFMPEG_MF_H264 || job->vcodec == HB_VCODEC_FFMPEG_MF_H265)
-    {
-        if (pix_fmt_is_supported(job, AV_PIX_FMT_NV12))
-        {
-            return AV_PIX_FMT_NV12;
-        }
-    }
-    if (bit_depth >= 12 && bit_depth_is_supported(job, 12))
-    {
-        return AV_PIX_FMT_YUV420P12;
-    }
-    if (bit_depth >= 10 && bit_depth_is_supported(job, 10))
-    {
-        return AV_PIX_FMT_YUV420P10;
-    }
-    return AV_PIX_FMT_YUV420P;
-}
-
 static void analyze_subtitle_scan( hb_job_t * job )
 {
     hb_subtitle_t *subtitle;
@@ -1464,21 +1367,7 @@ static void do_job(hb_job_t *job)
         memset(interjob, 0, sizeof(*interjob));
         interjob->sequence_id = job->sequence_id;
     }
-#if HB_PROJECT_FEATURE_QSV
-    if (hb_qsv_is_enabled(job))
-    {
-#if HB_PROJECT_FEATURE_QSV && (defined( _WIN32 ) || defined( __MINGW32__ ))
-        if (hb_qsv_full_path_is_enabled(job))
-        {
-            // Temporary workaround for the driver in case when low_power mode is disabled, should be removed later
-            if (job->title->pix_fmt == AV_PIX_FMT_YUV420P10 && job->vcodec == HB_VCODEC_QSV_H265)
-            {
-                job->vcodec = HB_VCODEC_QSV_H265_10BIT;
-            }
-        }
-#endif
-    }
-#endif
+
     job->list_work = hb_list_init();
     w = hb_get_work(job->h, WORK_READER);
     hb_list_add(job->list_work, w);
@@ -1531,16 +1420,13 @@ static void do_job(hb_job_t *job)
         init.time_base.num = 1;
         init.time_base.den = 90000;
         init.job = job;
-        init.pix_fmt = get_best_pix_ftm(job);
+        init.pix_fmt = hb_get_best_pix_fmt(job);
         init.color_range = AVCOL_RANGE_MPEG;
 
         init.color_prim = title->color_prim;
         init.color_transfer = title->color_transfer;
         init.color_matrix = title->color_matrix;
-        init.geometry.width = title->geometry.width;
-        init.geometry.height = title->geometry.height;
-
-        init.geometry.par = job->par;
+        init.geometry = title->geometry;
         memset(init.crop, 0, sizeof(int[4]));
         init.vrate = job->vrate;
         init.cfr = 0;
@@ -1564,9 +1450,13 @@ static void do_job(hb_job_t *job)
         job->color_prim = init.color_prim;
         job->color_transfer = init.color_transfer;
         job->color_matrix = init.color_matrix;
+        job->color_range = init.color_range;
         job->width = init.geometry.width;
         job->height = init.geometry.height;
-        job->par = init.geometry.par;
+        // job->par is supplied by the frontend.
+        //
+        // The filter chain does not know what the final desired PAR is.
+        // job->par = init.geometry.par;
         memcpy(job->crop, init.crop, sizeof(int[4]));
         job->vrate = init.vrate;
         job->cfr = init.cfr;

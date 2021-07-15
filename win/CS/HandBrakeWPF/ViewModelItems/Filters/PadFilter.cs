@@ -96,6 +96,7 @@ namespace HandBrakeWPF.ViewModelItems.Filters
                 this.customColour = value;
                 this.SetColour();
                 this.NotifyOfPropertyChange(() => this.CustomColour);
+                this.triggerTabChanged();
             }
         }
 
@@ -151,6 +152,21 @@ namespace HandBrakeWPF.ViewModelItems.Filters
                 this.NotifyOfPropertyChange(() => this.Right);
                 this.triggerTabChanged();
             }
+        }
+
+        public void SetRotationValues(int t, int b, int l, int r)
+        {
+            this.top = t;
+            this.bottom = b;
+            this.left = l;
+            this.right = r;
+
+            this.NotifyOfPropertyChange(() => this.Top);
+            this.NotifyOfPropertyChange(() => this.Bottom);
+            this.NotifyOfPropertyChange(() => this.Left);
+            this.NotifyOfPropertyChange(() => this.Right);
+
+            this.CalculatePosition();
         }
         
         private void CalculatePosition()

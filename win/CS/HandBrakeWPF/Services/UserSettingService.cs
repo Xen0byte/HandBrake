@@ -148,7 +148,7 @@ namespace HandBrakeWPF.Services
             catch (Exception exc)
             {
                 throw new GeneralApplicationException(
-                    Resources.UserSettings_AnErrorOccured,
+                    Resources.UserSettings_AnErrorOccurred,
                     Resources.SettingService_SaveErrorReset,
                     exc);
             }
@@ -167,9 +167,9 @@ namespace HandBrakeWPF.Services
                     using (StreamReader reader = new StreamReader(this.settingsFile))
                     {
                         string appSettings = reader.ReadToEnd();
-                        Dictionary<string, object> deserialisedSettings = JsonSerializer.Deserialize<Dictionary<string, object>>(appSettings, JsonSettings.Options);
+                        Dictionary<string, object> deserializedSettings = JsonSerializer.Deserialize<Dictionary<string, object>>(appSettings, JsonSettings.Options);
 
-                        this.userSettings = deserialisedSettings;
+                        this.userSettings = deserializedSettings;
                     }
                 }
                 else if (HandBrakeVersionHelper.IsNightly() && File.Exists(this.releaseSettingsFile))
@@ -185,8 +185,8 @@ namespace HandBrakeWPF.Services
                     using (StreamReader reader = new StreamReader(this.settingsFile))
                     {
                         string appSettings = reader.ReadToEnd();
-                        Dictionary<string, object> deserialisedSettings = JsonSerializer.Deserialize<Dictionary<string, object>>(appSettings, JsonSettings.Options);
-                        this.userSettings = deserialisedSettings;
+                        Dictionary<string, object> deserializedSettings = JsonSerializer.Deserialize<Dictionary<string, object>>(appSettings, JsonSettings.Options);
+                        this.userSettings = deserializedSettings;
                     }
                 }
                 else
@@ -255,7 +255,7 @@ namespace HandBrakeWPF.Services
             defaults.Add(UserSettingConstants.Verbosity, 1);
 
             // General
-            defaults.Add(UserSettingConstants.UpdateStatus, true);
+            defaults.Add(UserSettingConstants.UpdateStatus, false);
             defaults.Add(UserSettingConstants.LastUpdateCheckDate, DateTime.Now.Date.AddDays(-30));
             defaults.Add(UserSettingConstants.DaysBetweenUpdateCheck, 1);
             defaults.Add(UserSettingConstants.DarkThemeMode, DarkThemeMode.Light);
@@ -313,7 +313,6 @@ namespace HandBrakeWPF.Services
             defaults.Add(UserSettingConstants.ClearOldLogs, true);
 
             // Preview
-            defaults.Add(UserSettingConstants.PreviewRotationFlip, false);
             defaults.Add(UserSettingConstants.LastPreviewDuration, 30);
             defaults.Add(UserSettingConstants.DefaultPlayer, false);
 
@@ -325,9 +324,8 @@ namespace HandBrakeWPF.Services
             // Misc
             defaults.Add(UserSettingConstants.ScalingMode, 0);
             defaults.Add(UserSettingConstants.ForcePresetReset, 3);
-            defaults.Add(UserSettingConstants.MetadataPassthru, true);
             defaults.Add(UserSettingConstants.PreviewShowPictureSettingsOverlay, false);
-            defaults.Add(UserSettingConstants.OldOsWarning, 0);
+            defaults.Add(UserSettingConstants.RunCounter, 0);
             
             return defaults;
         }

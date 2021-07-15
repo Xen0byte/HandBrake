@@ -71,14 +71,12 @@ namespace HandBrakeWPF
         public const string AutonameFilePrePostString = "AutonameFilePrePostString";
         public const string WhenDonePerformActionImmediately = "WhenDonePerformActionImmediately";
         public const string DarkThemeMode = "DarkThemeMode";
-        public const string PreviewRotationFlip = "PreviewRotationFlip";
         public const string AlwaysUseDefaultPath = "AlwaysUseDefaultPath";
         public const string PauseEncodingOnLowBattery = "PauseEncodingOnLowBattery";
         public const string LowBatteryLevel = "LowBatteryLevel";
         public const string EnableQuickSyncLowPower = "EnableQuickSyncLowPower";
         public const string SimultaneousEncodes = "SimultaneousEncodes";
-        public const string MetadataPassthru = "MetadataPassthru";
         public const string PreviewShowPictureSettingsOverlay = "PreviewShowPictureSettingsOverlay";
-        public const string OldOsWarning = "OldOsWarning";
+        public const string RunCounter = "HandBrakeRunCounter";
     }
 }
